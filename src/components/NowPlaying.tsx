@@ -156,13 +156,14 @@ const NowPlaying: React.FC<Props> = ({ selectedSpeakerUUIDs, currentVolume, onLo
     if (driftRef.current) { window.clearTimeout(driftRef.current); driftRef.current = null; }
 
     if (isPlaying) {
-      // 1) local increment each second (only if we actually have a position)
-      tickRef.current = window.setInterval(() => {
-        setPosition((p) => {
-          if (duration > 0) return Math.min(duration, p + 1);
-          return p + 1;
-        });
-      }, 1000);
+      // 1) local increment each second - only if duration is known
+      // When duration is unknown (0), we don't locally increment to avoid
+      // the "progress then reset" effect when server polls correct the position
+      if (duration > 0) {
+        tickRef.current = window.setInterval(() => {
+          setPosition((p) => Math.min(duration, p + 1));
+        }, 1000);
+      }
 
       // 2) ask device for authoritative counters every 3s to correct drift
       pollRef.current = window.setInterval(() => {
